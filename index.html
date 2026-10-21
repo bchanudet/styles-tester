@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier de styles pour Google Docs</title>
+<meta name="description" content="Concevez, testez et partagez par lien les 9 styles de paragraphe de Google Docs : polices, couleurs, bordures, arrière-plans.">
+<style>
+:root{
+  --ink:#1b2130; --ink-2:#4b5366; --ink-3:#7b8397;
+  --line:#d6dae2; --line-2:#e8ebf0;
+  --desk:#d5d9e0; --accent:#2c4bd1; --accent-soft:#e3e9fd; --marker:#ffd23f; --marker-soft:#fff3c4;
+  --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--desk);color:var(--ink);font:14px/1.4 var(--ui);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* ---------- Structure ---------- */
+.app{display:grid;height:100vh;height:100dvh;grid-template-columns:268px minmax(0,1fr) 344px;grid-template-rows:54px minmax(0,1fr);grid-template-areas:"top top top" "styles stage inspector"}
+.topbar{grid-area:top;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;background:#fff;border-bottom:1px solid var(--line);min-width:0}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0;white-space:nowrap}
+.brand-name{font:italic 700 21px/1 Georgia,"Times New Roman",serif;letter-spacing:-.01em}
+.brand-sub{color:var(--ink-3);font-size:13px}
+.top-actions{display:flex;align-items:center;gap:8px;min-width:0}
+.sep{width:1px;height:22px;background:var(--line)}
+.btn{height:32px;padding:0 12px;border:1px solid var(--line);background:#fff;border-radius:6px;white-space:nowrap}
+.btn:hover:not(:disabled){background:#eff2f7}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover:not(:disabled){background:#2340b8}
+.btn.small{height:28px;padding:0 10px;font-size:13px}
+
+.styles,.inspector{background:#fff;overflow:auto;min-height:0}
+.styles{grid-area:styles;border-right:1px solid var(--line)}
+.inspector{grid-area:inspector;border-left:1px solid var(--line)}
+.panel-title{margin:0;padding:14px 16px 8px;font-size:13px;font-weight:650}
+.hint{margin:0;padding:0 16px 8px;font-size:12.5px;color:var(--ink-3)}
+
+/* ---------- Liste des styles ---------- */
+.style-list,.pair-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-2)}
+.style-item,.pair{display:block;width:100%;text-align:left;border:0;border-left:3px solid transparent;border-bottom:1px solid var(--line-2);background:#fff;padding:9px 14px 9px 13px}
+.style-item:hover,.style-item.is-hover,.pair:hover{background:var(--marker-soft)}
+.style-item[aria-current="true"]{border-left-color:var(--accent);background:var(--accent-soft)}
+.style-item[aria-current="true"]:hover{background:#d6defb}
+.style-preview{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25;padding:1px 0}
+.style-meta{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pair-actions{padding:0 16px 10px}
+.pair{padding:8px 14px 8px 13px}
+.pair.is-active{border-left-color:var(--accent);background:var(--accent-soft)}
+.pair-h{display:block;font-size:17px;line-height:1.25;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pair-b{display:block;font-size:13.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- Scène ---------- */
+.stage{grid-area:stage;display:flex;flex-direction:column;min-width:0;min-height:0}
+.stage-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 16px;font-size:12.5px;color:var(--ink-2);background:#e9ecf1;border-bottom:1px solid var(--line)}
+.stage-tools .tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.stage-tools select{height:28px;width:auto;font-size:12.5px;padding:0 6px}
+.zoom{display:flex;align-items:center;gap:2px}
+.zoom button{width:28px;height:28px;border:1px solid var(--line);background:#fff;border-radius:6px;line-height:1}
+.zoom button:hover{background:#eff2f7}
+.zoom output{min-width:92px;text-align:center;font-variant-numeric:tabular-nums}
+.scroller{flex:1;min-height:0;overflow:auto;padding:24px}
+.page{display:flex;flex-direction:column;margin:0 auto;background:#fff;width:var(--pw,8.5in);min-height:var(--ph,11in);padding:var(--pm,1in);box-shadow:0 1px 2px rgba(20,28,50,.3),0 10px 30px rgba(20,28,50,.14);color:#000}
+.blk{position:relative;cursor:pointer;overflow-wrap:break-word;transition:opacity .15s}
+.page.has-hl .blk:not(.is-hl){opacity:.27}
+.blk.is-hl::after{content:"";position:absolute;inset:-3px -8px;background:rgba(255,205,40,.6);mix-blend-mode:multiply;pointer-events:none;border-radius:2px}
+.blk.is-sel::before{content:"";position:absolute;left:-26px;top:1px;bottom:1px;width:3px;border-radius:2px;background:var(--accent)}
+
+/* ---------- Inspecteur ---------- */
+.insp-head{position:sticky;top:0;z-index:3;background:#fff;padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.insp-head h2{margin:0;font-size:17px;line-height:1.2}
+.insp-head p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
+.group{padding:14px 16px 16px;border-bottom:1px solid var(--line-2)}
+.group>h3{margin:0 0 10px;font-size:13px;font-weight:650}
+.stack{display:flex;flex-direction:column;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lbl{font-size:12px;color:var(--ink-2)}
+input[type=number],input[type=text],input[type=search],select{height:32px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:#fff;width:100%;min-width:0}
+input:focus,select:focus{border-color:var(--accent)}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;width:max-content;background:#fff}
+.seg button{min-width:34px;height:30px;border:0;border-right:1px solid var(--line);background:#fff;display:grid;place-items:center;padding:0 8px}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:#eff2f7}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.toolrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fontbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;text-align:left;font-size:16px}
+.fontbtn:hover{border-color:#aab1c2}
+.fontbtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fontbtn svg{flex:none;color:var(--ink-3)}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-size:12.5px;text-align:left}
+.linkbtn:hover{text-decoration:underline}
+.colorfield{display:flex;gap:6px;align-items:center}
+.sw{flex:none;width:32px;height:32px;border:1px solid var(--line);border-radius:6px;padding:3px;background:#fff}
+.sw:hover{border-color:#aab1c2}
+.sw i{display:block;width:100%;height:100%;border-radius:3px;border:1px solid rgba(0,0,0,.18)}
+.sw.none i{background:linear-gradient(135deg,transparent 45%,#d23 45%,#d23 55%,transparent 55%),#fff}
+.borders{display:grid;grid-template-columns:48px 64px 32px minmax(0,1fr) 30px;gap:6px 8px;align-items:center}
+.borders .hd{font-size:12px;color:var(--ink-2)}
+.borders .off{opacity:.55}
+.iconbtn{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:6px;display:grid;place-items:center;padding:0;color:var(--ink-2)}
+.iconbtn:hover{background:#eff2f7}
+
+/* ---------- Fenêtres flottantes ---------- */
+.pop{position:fixed;z-index:60;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 34px rgba(20,28,50,.22);padding:10px}
+.pop-label{font-size:12px;color:var(--ink-2);margin:8px 0 5px}
+.pop-label:first-child{margin-top:0}
+.pal{display:grid;grid-template-columns:repeat(10,20px);gap:3px}
+.pal.row{grid-template-columns:repeat(auto-fill,20px)}
+.cs{width:20px;height:20px;border:1px solid rgba(0,0,0,.2);border-radius:3px;padding:0}
+.cs:hover{transform:scale(1.18)}
+.cs[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.pop-none{width:100%;margin-bottom:8px;height:30px;border:1px solid var(--line);background:#fff;border-radius:6px}
+.pop-none:hover{background:#eff2f7}
+.pop-custom{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px}
+.pop-custom input{width:44px;height:26px;padding:0;border:1px solid var(--line);border-radius:4px;background:#fff}
+.fontpop{padding:0;display:flex;flex-direction:column;max-height:min(480px,calc(100vh - 24px))}
+.fp-tools{padding:8px;border-bottom:1px solid var(--line-2)}
+.fp-cats{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.chip{height:24px;padding:0 9px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:12px}
+.chip:hover{background:#eff2f7}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.fp-list{height:300px;overflow:auto;position:relative}
+.fp-space{position:relative}
+.fp-win{position:absolute;left:0;right:0;top:0}
+.fp-row{height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;cursor:pointer;font-size:17px;white-space:nowrap;overflow:hidden}
+.fp-name{overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.fp-row.is-active{background:var(--accent-soft)}
+.fp-row.is-current .fp-check{color:var(--accent)}
+.fp-head{cursor:default;font-size:12px;color:var(--ink-3);background:#f4f5f8;font-weight:600}
+.fp-empty{padding:18px 12px;color:var(--ink-3);font-size:13px}
+.fp-status{padding:7px 12px;font-size:12px;color:var(--ink-3);border-top:1px solid var(--line-2)}
+dialog{border:1px solid var(--line);border-radius:10px;padding:0;width:min(760px,92vw);max-height:86vh;color:var(--ink);box-shadow:0 20px 60px rgba(20,28,50,.3)}
+dialog::backdrop{background:rgba(20,28,50,.4)}
+.dlg{display:flex;flex-direction:column;max-height:86vh}
+.dlg header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.dlg h2{margin:0;font-size:16px}
+.dlg textarea{flex:1;min-height:340px;margin:0;border:0;padding:16px 18px;resize:none;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;outline:0}
+.dlg footer{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+
+/* ---------- Petits écrans ---------- */
+@media (max-width:980px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"top" "styles" "stage" "inspector"}
+  .topbar{padding:8px 12px;flex-wrap:wrap}
+  .brand-sub{display:none}
+  .top-actions{overflow-x:auto;max-width:100%}
+  .styles{border-right:0;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden}
+  .styles .panel-title,.styles .hint,.styles .pair-actions,.styles .pair-list{display:none}
+  .style-list{display:flex;border-top:0}
+  .style-item{width:auto;min-width:138px;max-width:190px;flex:none;border-left:0;border-bottom:0;border-right:1px solid var(--line-2);border-top:3px solid transparent}
+  .style-item[aria-current="true"]{border-top-color:var(--accent)}
+  .inspector{border-left:0;border-top:1px solid var(--line)}
+  .stage-tools .hint-text{display:none}
+  .scroller{padding:12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.cs:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-name">Atelier de styles</span><span class="brand-sub">pour Google Docs</span></div>
+    <div class="top-actions">
+      <button class="btn" id="undoBtn" title="Annuler (Ctrl+Z)">Annuler</button>
+      <button class="btn" id="redoBtn" title="Rétablir (Ctrl+Maj+Z)">Rétablir</button>
+      <span class="sep"></span>
+      <button class="btn" id="specBtn">Fiche récapitulative</button>
+      <button class="btn" id="resetAllBtn">Tout réinitialiser</button>
+      <button class="btn primary" id="shareBtn" title="Le lien de la barre d’adresse se met à jour automatiquement">Copier le lien</button>
+    </div>
+  </header>
+
+  <nav class="styles" aria-label="Styles de paragraphe">
+    <h2 class="panel-title">Styles de paragraphe</h2>
+    <ul class="style-list" id="styleList"></ul>
+    <h2 class="panel-title" style="padding-top:20px">Duos de polices</h2>
+    <p class="hint">Un clic applique la première police aux titres et la seconde au texte.</p>
+    <div class="pair-actions"><button class="btn small" id="randomPair">Duo au hasard</button></div>
+    <ul class="pair-list" id="pairList"></ul>
+  </nav>
+
+  <main class="stage">
+    <div class="stage-tools">
+      <span class="hint-text">Survolez un style pour le repérer dans le document, cliquez un texte pour le modifier.</span>
+      <div class="tools">
+        <select id="pageSel" aria-label="Format de page"></select>
+        <div class="zoom">
+          <button id="zoomOut" aria-label="Zoom arrière" title="Zoom arrière">−</button>
+          <output id="zoomLabel">100 %</output>
+          <button id="zoomIn" aria-label="Zoom avant" title="Zoom avant">+</button>
+          <button id="zoomFit" title="Ajuster à la largeur" style="width:auto;padding:0 8px;font-size:12.5px">Ajuster</button>
+        </div>
+      </div>
+    </div>
+    <div class="scroller" id="scroller"><article class="page" id="page"></article></div>
+  </main>
+
+  <aside class="inspector" id="inspector" aria-label="Options de mise en forme"></aside>
+</div>
+
+<div class="pop" id="colorPop" hidden></div>
+<div class="pop fontpop" id="fontPop" hidden>
+  <div class="fp-tools">
+    <input type="search" id="fpSearch" placeholder="Rechercher une police" autocomplete="off" aria-label="Rechercher une police">
+    <div class="fp-cats" id="fpCats"></div>
+  </div>
+  <div class="fp-list" id="fpList" role="listbox"><div class="fp-space" id="fpSpace"><div class="fp-win" id="fpWin"></div></div></div>
+  <div class="fp-status" id="fpStatus"></div>
+</div>
+
+<dialog id="specDialog">
+  <div class="dlg">
+    <header><h2>Fiche récapitulative des styles</h2><button class="btn small" id="specClose">Fermer</button></header>
+    <textarea id="specText" readonly spellcheck="false"></textarea>
+    <footer><button class="btn primary" id="specCopy">Copier le texte</button></footer>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   Constantes
+   ===================================================================== */
+const IDS = ['normal','title','subtitle','h1','h2','h3','h4','h5','h6'];
+const LABELS = {normal:'Texte normal',title:'Titre',subtitle:'Sous-titre',h1:'Titre 1',h2:'Titre 2',h3:'Titre 3',h4:'Titre 4',h5:'Titre 5',h6:'Titre 6'};
+const SIDES = [['bt','top','Haut'],['bb','bottom','Bas'],['bl','left','Gauche'],['br','right','Droite']];
+const DASHES = [['solid','Continu'],['dotted','Pointillé'],['dashed','Tirets']];
+const ALIGN_CSS = {l:'left',c:'center',r:'right',j:'justify'};
+const ALIGNS = [['l','Aligner à gauche'],['c','Centrer'],['r','Aligner à droite'],['j','Justifier']];
+const PAGES = {
+  letter:{label:'Lettre US (8,5 × 11 po)',w:'8.5in',h:'11in',m:'1in',px:816},
+  a4:{label:'A4 (21 × 29,7 cm)',w:'21cm',h:'29.7cm',m:'2.54cm',px:793.7}
+};
+const WEIGHT_NAMES = {100:'Fin',200:'Extra-léger',300:'Léger',400:'Normal',500:'Moyen',600:'Demi-gras',700:'Gras',800:'Extra-gras',900:'Noir'};
+const CAT_LABELS = {'sans-serif':'Sans empattement','serif':'Avec empattement','monospace':'Chasse fixe','handwriting':'Manuscrite','display':'Fantaisie'};
+
+const PALETTE = ('#000000 #434343 #666666 #999999 #b7b7b7 #cccccc #d9d9d9 #efefef #f3f3f3 #ffffff '+
+ '#980000 #ff0000 #ff9900 #ffff00 #00ff00 #00ffff #4a86e8 #0000ff #9900ff #ff00ff '+
+ '#e6b8af #f4cccc #fce5cd #fff2cc #d9ead3 #d0e0e3 #c9daf8 #cfe2f3 #d9d2e9 #ead1dc '+
+ '#dd7e6b #ea9999 #f9cb9c #ffe599 #b6d7a8 #a2c4c9 #a4c2f4 #9fc5e8 #b4a7d6 #d5a6bd '+
+ '#cc4125 #e06666 #f6b26b #ffd966 #93c47d #76a5af #6d9eeb #6fa8dc #8e7cc3 #c27ba0 '+
+ '#a61c00 #cc0000 #e69138 #f1c232 #6aa84f #45818e #3c78d8 #3d85c6 #674ea7 #a64d79 '+
+ '#85200c #990000 #b45f06 #bf9000 #38761d #134f5c #1155cc #0b5394 #351c75 #741b47 '+
+ '#5b0f00 #660000 #783f04 #7f6000 #274e13 #0c343d #1c4587 #073763 #20124d #4c1130').split(' ');
+
+/* Valeurs par défaut de Google Docs */
+const BASE = {f:'Arial',s:11,w:400,i:0,u:0,k:0,c:'#000000',bg:'',a:'l',ls:1.15,sb:0,sa:0,il:0,ir:0,fi:0,bp:4,
+  bt:[0,'#000000','solid'],bb:[0,'#000000','solid'],bl:[0,'#000000','solid'],br:[0,'#000000','solid']};
+const OVERRIDES = {
+  normal:{}, title:{s:26,sa:3}, subtitle:{s:15,c:'#666666',sa:16},
+  h1:{s:20,sb:20,sa:6}, h2:{s:16,sb:18,sa:6}, h3:{s:14,c:'#434343',sb:16,sa:4},
+  h4:{s:12,c:'#666666',sb:14,sa:4}, h5:{s:11,c:'#666666',sb:12,sa:4}, h6:{s:11,c:'#666666',i:1,sb:12,sa:4}
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+const defaultsFor = id => clone(Object.assign({}, BASE, OVERRIDES[id]));
+
+/* Contenu du document simulé */
+const DOC = [
+ ['title','p','Charte rédactionnelle de l’équipe'],
+ ['subtitle','p','Principes, usages et conseils pour des documents clairs'],
+ ['h1','h1','Pourquoi une charte rédactionnelle'],
+ ['normal','p','Un document bien structuré se lit plus vite et se retient mieux. Cette charte rassemble les repères communs que chacun peut appliquer, que l’on rédige une note interne, un compte rendu de réunion ou une proposition destinée à un client. Elle n’a pas vocation à figer l’écriture, mais à lui donner une base partagée.'],
+ ['h2','h2','Les principes directeurs'],
+ ['normal','p','Trois idées guident l’ensemble des recommandations : la clarté avant l’élégance, la cohérence d’un document à l’autre et le respect du temps de lecture. Lorsqu’une règle semble gênante, il suffit de se demander laquelle de ces trois idées elle sert.'],
+ ['h3','h3','Écrire pour être lu'],
+ ['normal','p','Une phrase courte passe souvent mieux qu’une phrase longue, surtout lorsqu’elle ne porte qu’une seule idée. On privilégie les verbes d’action, on évite les sigles non définis et l’on place l’information essentielle au début de chaque paragraphe.'],
+ ['h4','h4','Choisir les mots'],
+ ['normal','p','Les termes techniques sont définis à leur première apparition. Un même concept garde le même nom tout au long du document, afin d’éviter toute ambiguïté pour les nouveaux lecteurs.'],
+ ['h5','h5','Structurer les paragraphes'],
+ ['normal','p','Chaque paragraphe développe un point unique. Un intertitre aide à repérer rapidement la suite, tandis qu’une courte phrase d’introduction annonce ce qui va suivre.'],
+ ['h6','h6','Cas particulier des annexes'],
+ ['normal','p','Les annexes regroupent les éléments de référence : tableaux, extraits de procédures, renvois vers des documents antérieurs. Elles sont numérotées dans l’ordre de leur mention dans le texte principal.'],
+ ['h1','h1','Mise en pratique'],
+ ['normal','p','Avant de diffuser un document, relisez-le à voix haute et vérifiez que chaque titre annonce fidèlement son contenu. Demandez à un collègue de le parcourir en moins d’une minute : s’il en retient l’essentiel, la structure remplit son rôle.']
+];
+
+/* Polices système proposées par Google Docs */
+const SYSTEM = [
+ ['Arial','sans-serif',"Arial,'Liberation Sans',Helvetica,sans-serif"],
+ ['Calibri','sans-serif',"Calibri,Carlito,'Segoe UI',sans-serif"],
+ ['Cambria','serif',"Cambria,Caladea,Georgia,serif"],
+ ['Comic Sans MS','display',"'Comic Sans MS','Comic Neue',cursive"],
+ ['Consolas','monospace',"Consolas,'DejaVu Sans Mono',monospace"],
+ ['Courier New','monospace',"'Courier New','Liberation Mono',monospace"],
+ ['Georgia','serif',"Georgia,'DejaVu Serif',serif"],
+ ['Impact','display',"Impact,'Arial Narrow Bold',sans-serif"],
+ ['Times New Roman','serif',"'Times New Roman','Liberation Serif',Times,serif"],
+ ['Trebuchet MS','sans-serif',"'Trebuchet MS','Lucida Grande',sans-serif"],
+ ['Verdana','sans-serif',"Verdana,'DejaVu Sans',sans-serif"]
+].map(([n,c,stack]) => ({n,c,w:[400,700],i:true,sys:true,stack}));
+
+/* Liste de secours si l’annuaire des polices est injoignable */
+const EMBED = `Roboto|s|100,300,400,500,700,900|1
+Open Sans|s|300-800|1
+Lato|s|100,300,400,700,900|1
+Montserrat|s|100-900|1
+Poppins|s|100-900|1
+Inter|s|100-900|0
+Source Sans 3|s|200-900|1
+Nunito|s|200-900|1
+Nunito Sans|s|200-900|1
+Raleway|s|100-900|1
+Work Sans|s|100-900|1
+Noto Sans|s|100-900|1
+Ubuntu|s|300,400,500,700|1
+Mulish|s|200-900|1
+PT Sans|s|400,700|1
+Fira Sans|s|100-900|1
+Rubik|s|300-900|1
+DM Sans|s|100-900|1
+Quicksand|s|300-700|0
+Barlow|s|100-900|1
+Karla|s|200-800|1
+Josefin Sans|s|100-700|1
+Oswald|s|200-700|0
+Manrope|s|200-800|0
+Cabin|s|400-700|1
+Hind|s|300-700|0
+Archivo|s|100-900|1
+Libre Franklin|s|100-900|1
+IBM Plex Sans|s|100-700|1
+Heebo|s|100-900|0
+Lexend|s|100-900|0
+Outfit|s|100-900|0
+Plus Jakarta Sans|s|200-800|1
+Space Grotesk|s|300-700|0
+Sora|s|100-800|0
+Figtree|s|300-900|1
+Albert Sans|s|100-900|1
+Jost|s|100-900|1
+Titillium Web|s|200,300,400,600,700,900|1
+Exo 2|s|100-900|1
+Assistant|s|200-800|0
+Overpass|s|100-900|1
+Public Sans|s|100-900|1
+Red Hat Display|s|300-900|1
+Be Vietnam Pro|s|100-900|1
+Urbanist|s|100-900|1
+Asap|s|100-900|1
+Signika|s|300-700|0
+Questrial|s|400|0
+Arimo|s|400-700|1
+Quattrocento Sans|s|400,700|1
+Proza Libre|s|400-800|1
+Alegreya Sans|s|100,300,400,500,700,800,900|1
+Playfair Display|f|400-900|1
+Merriweather|f|300,400,700,900|1
+Lora|f|400-700|1
+PT Serif|f|400,700|1
+Noto Serif|f|100-900|1
+Source Serif 4|f|200-900|1
+Libre Baskerville|f|400,700|1
+EB Garamond|f|400-800|1
+Cormorant Garamond|f|300-700|1
+Crimson Text|f|400,600,700|1
+Crimson Pro|f|200-900|1
+Bitter|f|100-900|1
+Roboto Slab|f|100-900|0
+Zilla Slab|f|300-700|1
+Arvo|f|400,700|1
+Domine|f|400-700|0
+Spectral|f|200,300,400,500,600,700,800|1
+Libre Caslon Text|f|400,700|1
+Cardo|f|400,700|1
+Vollkorn|f|400-900|1
+Alegreya|f|400-900|1
+DM Serif Display|f|400|1
+DM Serif Text|f|400|1
+Fraunces|f|100-900|1
+Newsreader|f|200-800|1
+Gelasio|f|400-700|1
+IBM Plex Serif|f|100-700|1
+Old Standard TT|f|400,700|1
+Cinzel|f|400-900|0
+Literata|f|200-900|1
+Bodoni Moda|f|400-900|1
+Cormorant|f|300-700|1
+Tinos|f|400,700|1
+Prata|f|400|0
+Marcellus|f|400|0
+Abril Fatface|d|400|0
+Bebas Neue|d|400|0
+Anton|d|400|0
+Lobster|d|400|0
+Righteous|d|400|0
+Fredoka|d|300-700|0
+Alfa Slab One|d|400|0
+Archivo Black|d|400|0
+Staatliches|d|400|0
+Bangers|d|400|0
+Comfortaa|d|300-700|0
+Baloo 2|d|400-800|0
+Pacifico|h|400|0
+Caveat|h|400-700|0
+Dancing Script|h|400-700|0
+Satisfy|h|400|0
+Shadows Into Light|h|400|0
+Indie Flower|h|400|0
+Great Vibes|h|400|0
+Permanent Marker|h|400|0
+Amatic SC|h|400,700|0
+Kalam|h|300,400,700|0
+Sacramento|h|400|0
+Patrick Hand|h|400|0
+Roboto Mono|m|100-700|1
+Source Code Pro|m|200-900|1
+Fira Code|m|300-700|0
+JetBrains Mono|m|100-800|1
+IBM Plex Mono|m|100-700|1
+Space Mono|m|400,700|1
+Inconsolata|m|200-900|0
+Ubuntu Mono|m|400,700|1
+DM Mono|m|300,400,500|1
+Courier Prime|m|400,700|1`;
+
+/* Duos : [police des titres, graisse des titres, police du texte] */
+const PAIRS = [
+ ['Playfair Display',700,'Source Sans 3'],['Montserrat',700,'Lora'],['Merriweather',700,'Open Sans'],
+ ['Raleway',700,'Merriweather'],['Oswald',500,'Quattrocento Sans'],['Abril Fatface',400,'Lato'],
+ ['Libre Baskerville',700,'Montserrat'],['Roboto Slab',700,'Roboto'],['Space Grotesk',700,'Inter'],
+ ['DM Serif Display',400,'DM Sans'],['Cormorant Garamond',600,'Nunito Sans'],['Fraunces',700,'Inter'],
+ ['EB Garamond',600,'Fira Sans'],['Bebas Neue',400,'Karla'],['Alegreya',700,'Alegreya Sans'],
+ ['Libre Franklin',700,'Libre Baskerville'],['Spectral',700,'Karla'],['Poppins',600,'Crimson Pro'],
+ ['Bitter',700,'Work Sans'],['Josefin Sans',600,'Lora']
+];
+
+/* =====================================================================
+   Utilitaires
+   ===================================================================== */
+const $ = (s, r=document) => r.querySelector(s);
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const fmtNum = n => String(Math.round(n*100)/100);
+const fr = n => fmtNum(n).replace('.', ',');
+const enc = n => encodeURIComponent(n).replace(/%20/g,'+');
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})){
+    if(v==null || v===false) continue;
+    if(k==='class') e.className = v;
+    else if(k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v===true ? '' : v);
+  }
+  kids.flat().forEach(c => { if(c!=null && c!==false) e.append(c.nodeType ? c : document.createTextNode(c)); });
+  return e;
+}
+function normHex(v){
+  if(typeof v!=='string') return null;
+  let s = v.trim().toLowerCase().replace(/^#/,'');
+  if(/^[0-9a-f]{3}$/.test(s)) s = s.split('').map(c=>c+c).join('');
+  return /^[0-9a-f]{6}$/.test(s) ? '#'+s : null;
+}
+const cleanFont = s => String(s).replace(/[^\p{L}\p{N} .\-_&+]/gu,'').trim().slice(0,80);
+let toastTimer = 0;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* =====================================================================
+   Catalogue de polices
+   ===================================================================== */
+const CACHE_KEY = 'atelier-styles.catalogue.v1';
+let GOOGLE = [];
+let MAP = new Map();
+let catalogReady = false;
+let catalogNote = '';
+
+function expandWeights(s){
+  if(s.includes('-')){ const [a,b] = s.split('-').map(Number); const out=[]; for(let w=a; w<=b; w+=100) out.push(w); return out; }
+  return s.split(',').map(Number);
+}
+function parseEmbed(){
+  const cats = {s:'sans-serif',f:'serif',m:'monospace',d:'display',h:'handwriting'};
+  return EMBED.split('\n').map(l => { const [n,c,w,i] = l.split('|'); return {n,c:cats[c],w:expandWeights(w),i:i==='1'}; });
+}
+function setCatalog(list){
+  GOOGLE = list.slice().sort((a,b)=>a.n.localeCompare(b.n));
+  MAP = new Map();
+  SYSTEM.forEach(m => MAP.set(m.n, m));
+  GOOGLE.forEach(m => { if(!MAP.has(m.n)) MAP.set(m.n, m); });
+}
+const fontMeta = n => MAP.get(n) || {n, c:'sans-serif', w:[400,700], i:true, unknown:true};
+function nearestWeight(m, w){
+  if(!m.w || !m.w.length) return w;
+  let best = m.w[0], d = Infinity;
+  for(const x of m.w){ const dd = Math.abs(x-w); if(dd<d || (dd===d && x>best)){ best=x; d=dd; } }
+  return best;
+}
+function fontStack(name, m){
+  m = m || fontMeta(name);
+  if(m.sys) return m.stack;
+  const generic = m.c==='serif' ? 'serif' : m.c==='monospace' ? 'monospace' : m.c==='handwriting' ? 'cursive' : 'sans-serif';
+  return `"${name}",${generic}`;
+}
+async function fromFontsource(){
+  const r = await fetch('https://api.fontsource.org/v1/fonts');
+  if(!r.ok) throw new Error('fontsource');
+  const j = await r.json();
+  const ok = new Set(['sans-serif','serif','monospace','handwriting','display']);
+  const list = j.filter(f => f && f.family && (f.type===undefined || f.type==='google') && f.category!=='icons')
+    .map(f => ({n:cleanFont(f.family), c: ok.has(f.category) ? f.category : 'display',
+      w:(f.weights && f.weights.length ? f.weights.slice() : [400]).map(Number).sort((a,b)=>a-b),
+      i:Array.isArray(f.styles) && f.styles.includes('italic')}));
+  if(list.length < 400) throw new Error('liste trop courte');
+  return list;
+}
+async function fromGoogleMetadata(){
+  const r = await fetch('https://fonts.google.com/metadata/fonts');
+  if(!r.ok) throw new Error('google');
+  const j = JSON.parse((await r.text()).replace(/^\)\]\}'/, ''));
+  const list = j.familyMetadataList.map(f => {
+    const keys = Object.keys(f.fonts || {});
+    const cat = String(f.category||'').toLowerCase().replace(/\s+/g,'-');
+    return {n:cleanFont(f.family), c:CAT_LABELS[cat]?cat:'display',
+      w:[...new Set(keys.map(k=>parseInt(k,10)))].filter(Boolean).sort((a,b)=>a-b),
+      i:keys.some(k=>k.endsWith('i'))};
+  });
+  if(list.length < 400) throw new Error('liste trop courte');
+  return list;
+}
+async function loadCatalog(){
+  let list = null;
+  try{
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if(c && Date.now()-c.t < 6048e5 && Array.isArray(c.list) && c.list.length > 400) list = c.list;
+  }catch(e){}
+  if(!list){
+    try{ list = await fromFontsource(); }
+    catch(e){ try{ list = await fromGoogleMetadata(); }catch(e2){ list = null; } }
+    if(list){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(), list})); }catch(e){} }
+  }
+  if(list){
+    setCatalog(list);
+    catalogNote = `${list.length.toLocaleString('fr-FR')} polices Google Fonts, ${SYSTEM.length} polices système`;
+  }else{
+    catalogNote = `Liste de secours hors ligne : ${GOOGLE.length} polices seulement`;
+  }
+  catalogReady = true;
+  renderPairs();
+  commit({noHistory:true});
+  if(!list) toast('Annuaire des polices injoignable : liste réduite affichée');
+}
+
+/* =====================================================================
+   État, validation et historique
+   ===================================================================== */
+const freshState = () => { const styles = {}; IDS.forEach(id => styles[id] = defaultsFor(id)); return {styles, page:'letter'}; };
+let state = freshState();
+let selected = 'normal';
+let tempFont = null;
+const cur = () => state.styles[selected];
+
+function sanitizeStyle(src, id){
+  const d = defaultsFor(id);
+  if(!src || typeof src!=='object') return d;
+  const num = (k,min,max) => { if(k in src){ const v = Number(src[k]); if(Number.isFinite(v)) d[k] = clamp(v,min,max); } };
+  if(typeof src.f==='string'){ const f = cleanFont(src.f); if(f) d.f = f; }
+  num('s',1,400); num('w',100,1000); num('ls',0.5,4); num('sb',0,400); num('sa',0,400);
+  num('il',-5,30); num('ir',-5,30); num('fi',-30,30); num('bp',0,50);
+  ['i','u','k'].forEach(k => { if(k in src) d[k] = src[k] ? 1 : 0; });
+  if(src.c!==undefined){ const c = normHex(src.c); if(c) d.c = c; }
+  if('bg' in src) d.bg = src.bg ? (normHex(src.bg) || '') : '';
+  if(ALIGN_CSS[src.a]) d.a = src.a;
+  SIDES.forEach(([k]) => {
+    const v = src[k];
+    if(Array.isArray(v)){
+      const w = Number(v[0]);
+      d[k] = [Number.isFinite(w) ? clamp(w,0,50) : 0, normHex(v[1]) || '#000000', DASHES.some(x=>x[0]===v[2]) ? v[2] : 'solid'];
+    }
+  });
+  return d;
+}
+function toPayload(){
+  const s = {};
+  IDS.forEach((id,idx) => {
+    const st = state.styles[id], df = defaultsFor(id), d = {};
+    Object.keys(df).forEach(k => { if(JSON.stringify(st[k]) !== JSON.stringify(df[k])) d[k] = st[k]; });
+    if(Object.keys(d).length) s[idx] = d;
+  });
+  const out = {v:1};
+  if(Object.keys(s).length) out.s = s;
+  if(state.page!=='letter') out.p = state.page;
+  return Object.keys(out).length > 1 ? out : null;
+}
+function fromPayload(o){
+  const st = freshState();
+  if(o && o.s) IDS.forEach((id,idx) => { if(o.s[idx]) st.styles[id] = sanitizeStyle(o.s[idx], id); });
+  if(o && PAGES[o.p]) st.page = o.p;
+  return st;
+}
+
+/* Encodage URL : JSON compact, compressé (deflate) si disponible, en base64 URL-safe */
+function b64u(bytes){
+  let s = ''; for(let i=0; i<bytes.length; i+=8192) s += String.fromCharCode.apply(null, bytes.subarray(i,i+8192));
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function unb64u(str){
+  const s = atob(str.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((str.length+3)%4));
+  const out = new Uint8Array(s.length); for(let i=0;i<s.length;i++) out[i] = s.charCodeAt(i); return out;
+}
+async function pipe(bytes, stream){
+  const w = stream.writable.getWriter(); w.write(bytes); w.close();
+  return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+}
+async function encodeToken(obj){
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  let best = 'r' + b64u(raw);
+  if('CompressionStream' in window){
+    try{ const z = 'z' + b64u(await pipe(raw, new CompressionStream('deflate-raw'))); if(z.length < best.length) best = z; }catch(e){}
+  }
+  return best;
+}
+async function decodeToken(tok){
+  const kind = tok[0], data = unb64u(tok.slice(1));
+  let bytes;
+  if(kind==='r') bytes = data;
+  else if(kind==='z'){
+    if(!('DecompressionStream' in window)) throw new Error('Ce navigateur ne sait pas lire ce lien compressé.');
+    bytes = await pipe(data, new DecompressionStream('deflate-raw'));
+  }else throw new Error('Format de lien inconnu.');
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function readToken(){
+  const m = /[#&]s=([^&]+)/.exec(location.hash) || /[?&]s=([^&]+)/.exec(location.search);
+  return m ? m[1] : '';
+}
+let lastToken = '', urlTimer = 0, urlSeq = 0;
+const currentToken = async () => { const p = toPayload(); return p ? encodeToken(p) : ''; };
+function scheduleUrl(){ clearTimeout(urlTimer); urlTimer = setTimeout(writeUrl, 250); }
+async function writeUrl(){
+  const seq = ++urlSeq, tok = await currentToken();
+  if(seq !== urlSeq) return tok;
+  lastToken = tok;
+  try{ history.replaceState(null, '', location.pathname + location.search + (tok ? '#s='+tok : '')); }catch(e){}
+  return tok;
+}
+async function applyToken(tok){
+  try{
+    state = tok ? fromPayload(await decodeToken(tok)) : freshState();
+    lastToken = tok;
+    commit({noHistory:true}); pushHistory(true);
+    applyPage();
+  }catch(e){ toast('Lien invalide ou illisible : ' + (e.message || 'erreur')); }
+}
+
+let hist = [], hi = -1, lastPush = 0;
+function pushHistory(force){
+  const snap = JSON.stringify(state);
+  if(hi>=0 && snap === hist[hi]) return;
+  const now = Date.now();
+  if(!force && hi === hist.length-1 && hi>0 && now-lastPush < 500){ hist[hi] = snap; }
+  else{ hist.length = hi+1; hist.push(snap); hi++; if(hist.length>150){ hist.shift(); hi--; } }
+  lastPush = now;
+}
+function undo(){ if(hi>0){ hi--; state = JSON.parse(hist[hi]); commit({noHistory:true}); applyPage(); } }
+function redo(){ if(hi<hist.length-1){ hi++; state = JSON.parse(hist[hi]); commit({noHistory:true}); applyPage(); } }
+
+/* =====================================================================
+   Chargement des polices Google
+   ===================================================================== */
+const requested = new Map(), webReady = new Set(), ratios = new Map();
+function cssUrl(name, keys){
+  const tuples = keys.map(k => k.split(',').map(Number)).sort((a,b)=>a[0]-b[0] || a[1]-b[1]);
+  const ital = tuples.some(t => t[0]===1);
+  const axis = ital ? 'ital,wght@' + tuples.map(t=>t.join(',')).join(';') : 'wght@' + [...new Set(tuples.map(t=>t[1]))].join(';');
+  return `https://fonts.googleapis.com/css2?family=${enc(name)}:${axis}&display=swap`;
+}
+function addLink(urls, ok){
+  const l = h('link', {rel:'stylesheet', href:urls[0]});
+  l.onload = ok;
+  l.onerror = () => { l.remove(); if(urls.length>1) addLink(urls.slice(1), ok); };
+  document.head.append(l);
+}
+function loadVariants(name, keys){
+  const have = requested.get(name) || new Set();
+  const fresh = [...keys].filter(k => !have.has(k));
+  if(!fresh.length) return;
+  fresh.forEach(k => have.add(k)); requested.set(name, have);
+  const urls = [cssUrl(name, fresh), `https://fonts.googleapis.com/css2?family=${enc(name)}:wght@400&display=swap`, `https://fonts.googleapis.com/css2?family=${enc(name)}&display=swap`];
+  addLink(urls, () => {
+    Promise.all(fresh.map(k => { const [i,w] = k.split(','); return document.fonts.load(`${i==='1'?'italic ':''}${w} 16px "${name}"`); }))
+      .catch(()=>{}).then(() => { webReady.add(name); scheduleRefresh(); });
+  });
+}
+function effStyle(id){
+  const st = state.styles[id];
+  return (tempFont && id===selected) ? Object.assign({}, st, {f:tempFont, w:nearestWeight(fontMeta(tempFont), st.w)}) : st;
+}
+function ensureFonts(){
+  const need = new Map();
+  IDS.forEach(id => {
+    const st = effStyle(id), m = fontMeta(st.f);
+    if(m.sys || (m.unknown && !catalogReady)) return;
+    const key = `${st.i && m.i ? 1 : 0},${nearestWeight(m, st.w)}`;
+    if(!need.has(st.f)) need.set(st.f, new Set());
+    need.get(st.f).add(key);
+  });
+  need.forEach((keys,name) => loadVariants(name, keys));
+}
+let refreshQueued = false;
+function scheduleRefresh(){
+  if(refreshQueued) return; refreshQueued = true;
+  requestAnimationFrame(() => { refreshQueued = false; renderDocCSS(); renderList(); syncInspector(); });
+}
+function measureRatio(stack){
+  const d = h('div', {style:`position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:100px;font-weight:400;line-height:normal;font-family:${stack}`}, 'Hxgyé');
+  document.body.append(d); const r = d.getBoundingClientRect().height / 100; d.remove();
+  return r > 0.5 ? r : 1.15;
+}
+function fontRatio(name, m, stack){
+  if(ratios.has(name)) return ratios.get(name);
+  if(m.sys || webReady.has(name)){ const r = measureRatio(stack); ratios.set(name, r); return r; }
+  return 1.15;
+}
+
+/* Aperçu des polices dans la liste (une requête groupée par lot de 8) */
+const previewed = new Set(), pvQueue = new Set(); let pvTimer = 0;
+function schedulePreviewLoad(names){
+  names.forEach(n => { if(!previewed.has(n) && !webReady.has(n)) pvQueue.add(n); });
+  clearTimeout(pvTimer); pvTimer = setTimeout(flushPreview, 140);
+}
+function flushPreview(){
+  const arr = [...pvQueue]; pvQueue.clear();
+  for(let i=0; i<arr.length; i+=8){
+    const chunk = arr.slice(i, i+8); chunk.forEach(n => previewed.add(n));
+    const l = h('link', {rel:'stylesheet', href:'https://fonts.googleapis.com/css2?' + chunk.map(n=>'family='+enc(n)).join('&') + '&display=swap'});
+    l.onerror = () => {
+      l.remove();
+      if(chunk.length>1) chunk.forEach(n => { const l2 = h('link', {rel:'stylesheet', href:'https://fonts.googleapis.com/css2?family='+enc(n)+'&display=swap'}); l2.onerror = () => l2.remove(); document.head.append(l2); });
+    };
+    document.head.append(l);
+  }
+}
+
+/* =====================================================================
+   Rendu : CSS du document, liste des styles, document
+   ===================================================================== */
+const docStyle = h('style'); document.head.append(docStyle);
+function cssFor(st){
+  const m = fontMeta(st.f), stack = fontStack(st.f, m);
+  const w = nearestWeight(m, st.w), ratio = fontRatio(st.f, m, stack);
+  const deco = [st.u && 'underline', st.k && 'line-through'].filter(Boolean).join(' ') || 'none';
+  let c = `font-family:${stack};font-size:${st.s}pt;font-weight:${w};font-style:${st.i?'italic':'normal'};text-decoration:${deco};` +
+    `color:${st.c};background:${st.bg || 'transparent'};text-align:${ALIGN_CSS[st.a]};line-height:${(ratio*st.ls).toFixed(4)};` +
+    `margin:${st.sb}pt ${st.ir}cm ${st.sa}pt ${st.il}cm;text-indent:${st.fi}cm;`;
+  SIDES.forEach(([k,side]) => {
+    const [bw,bc,bd] = st[k];
+    c += bw > 0 ? `border-${side}:${bw}pt ${bd} ${bc};padding-${side}:${st.bp}pt;` : `border-${side}:0 none;padding-${side}:0;`;
+  });
+  return c;
+}
+function renderDocCSS(){
+  docStyle.textContent = IDS.map(id => `.page [data-style="${id}"]{${cssFor(effStyle(id))}}`).join('\n');
+}
+const listEls = {};
+function buildList(){
+  const ul = $('#styleList');
+  IDS.forEach(id => {
+    const prev = h('span', {class:'style-preview'}, LABELS[id]);
+    const meta = h('span', {class:'style-meta'});
+    const btn = h('button', {class:'style-item', type:'button', 'data-id':id, 'aria-current':'false'}, prev, meta);
+    btn.addEventListener('mouseenter', () => highlightDoc(id));
+    btn.addEventListener('mouseleave', () => highlightDoc(null));
+    btn.addEventListener('focus', () => highlightDoc(id));
+    btn.addEventListener('blur', () => highlightDoc(null));
+    btn.addEventListener('click', () => select(id, true));
+    ul.append(h('li', null, btn));
+    listEls[id] = {btn, prev, meta};
+  });
+}
+function renderList(){
+  IDS.forEach(id => {
+    const st = effStyle(id), m = fontMeta(st.f), {prev, meta} = listEls[id];
+    prev.style.fontFamily = fontStack(st.f, m);
+    prev.style.fontSize = clamp(st.s, 13, 24) + 'px';
+    prev.style.fontWeight = nearestWeight(m, st.w);
+    prev.style.fontStyle = st.i ? 'italic' : 'normal';
+    prev.style.textDecoration = [st.u && 'underline', st.k && 'line-through'].filter(Boolean).join(' ') || 'none';
+    prev.style.color = st.c;
+    prev.style.background = st.bg || 'transparent';
+    prev.style.paddingLeft = st.bg ? '4px' : '0';
+    meta.textContent = `${st.f}, ${fmtNum(st.s)} pt` + (st.w!==400 ? `, graisse ${st.w}` : '') + (st.i ? ', italique' : '');
+  });
+}
+function buildDoc(){
+  const page = $('#page');
+  DOC.forEach(([id,tag,text]) => page.append(h(tag, {class:'blk', 'data-style':id}, text)));
+  page.addEventListener('mouseover', e => { const b = e.target.closest('.blk'); markListHover(b ? b.dataset.style : null); });
+  page.addEventListener('mouseleave', () => markListHover(null));
+  page.addEventListener('click', e => { const b = e.target.closest('.blk'); if(b) select(b.dataset.style, false); });
+}
+function highlightDoc(id){
+  const page = $('#page');
+  page.classList.toggle('has-hl', !!id);
+  page.querySelectorAll('.blk').forEach(b => b.classList.toggle('is-hl', b.dataset.style === id));
+}
+function markListHover(id){ IDS.forEach(k => listEls[k].btn.classList.toggle('is-hover', k === id)); }
+function select(id, scroll){
+  selected = id; tempFont = null;
+  IDS.forEach(k => listEls[k].btn.setAttribute('aria-current', String(k === id)));
+  $('#page').querySelectorAll('.blk').forEach(b => b.classList.toggle('is-sel', b.dataset.style === id));
+  if(scroll){ const first = $(`#page [data-style="${id}"]`); if(first) first.scrollIntoView({block:'nearest', behavior:'smooth'}); }
+  closePops(); renderDocCSS(); renderList(); syncInspector();
+}
+
+/* Format de page et zoom */
+let zoomMode = 'fit';
+const ZOOMS = [0.4,0.5,0.6,0.75,0.9,1,1.25,1.5,2];
+function currentZoom(){
+  if(zoomMode !== 'fit') return zoomMode;
+  const sc = $('#scroller'), avail = sc.clientWidth - (sc.clientWidth < 600 ? 24 : 48);
+  return clamp(avail / PAGES[state.page].px, 0.3, 1);
+}
+function applyZoom(){
+  const z = currentZoom();
+  $('#page').style.zoom = z;
+  $('#zoomLabel').textContent = Math.round(z*100) + ' %' + (zoomMode==='fit' ? ' (ajusté)' : '');
+}
+function applyPage(){
+  const p = PAGES[state.page], page = $('#page');
+  page.style.setProperty('--pw', p.w); page.style.setProperty('--ph', p.h); page.style.setProperty('--pm', p.m);
+  $('#pageSel').value = state.page;
+  applyZoom();
+}
+
+/* =====================================================================
+   Fenêtres flottantes
+   ===================================================================== */
+let openAnchor = null;
+function placePop(pop, anchor, width){
+  if(width) pop.style.width = width + 'px';
+  pop.hidden = false;
+  const r = anchor.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let x = Math.min(Math.max(8, r.left), innerWidth - pw - 8), y = r.bottom + 6;
+  if(y + ph > innerHeight - 8){ const up = r.top - ph - 6; y = up > 8 ? up : Math.max(8, innerHeight - ph - 8); }
+  pop.style.left = x + 'px'; pop.style.top = y + 'px';
+}
+function closePops(){
+  $('#colorPop').hidden = true;
+  if(!$('#fontPop').hidden){
+    $('#fontPop').hidden = true;
+    if(tempFont){ tempFont = null; renderDocCSS(); renderList(); }
+  }
+  openAnchor = null;
+}
+document.addEventListener('pointerdown', e => {
+  if(e.target.closest('.pop') || e.target.closest('[data-anchor]')) return;
+  closePops();
+});
+addEventListener('resize', () => { closePops(); if(zoomMode==='fit') applyZoom(); });
+
+function documentColors(){
+  const set = new Set();
+  IDS.forEach(id => { const st = state.styles[id]; set.add(st.c); if(st.bg) set.add(st.bg); SIDES.forEach(([k]) => { if(st[k][0] > 0) set.add(st[k][1]); }); });
+  return [...set].slice(0, 16);
+}
+function openColorPop(anchor, opts){
+  if(openAnchor === anchor){ closePops(); return; }
+  closePops();
+  const pop = $('#colorPop'), value = opts.get();
+  pop.textContent = '';
+  const sw = c => h('button', {class:'cs', type:'button', title:c, 'aria-label':c, 'aria-pressed':String(c === value), style:`background:${c}`, onclick:() => { opts.set(c); closePops(); }});
+  if(opts.allowNone) pop.append(h('button', {class:'pop-none', type:'button', onclick:() => { opts.set(''); closePops(); }}, 'Aucune couleur'));
+  const used = documentColors();
+  pop.append(h('div', {class:'pop-label'}, 'Couleurs du document'), h('div', {class:'pal row'}, used.map(sw)));
+  pop.append(h('div', {class:'pop-label'}, 'Palette Google Docs'), h('div', {class:'pal'}, PALETTE.map(sw)));
+  const native = h('input', {type:'color', value: normHex(value) || '#000000', 'aria-label':'Couleur personnalisée'});
+  native.addEventListener('input', () => opts.set(native.value));
+  pop.append(h('label', {class:'pop-custom'}, 'Couleur personnalisée', native));
+  placePop(pop, anchor); openAnchor = anchor;
+}
+
+/* ---- Sélecteur de polices (liste virtualisée) ---- */
+const ROW = 34;
+const FP = {rows:[], active:-1, cat:'all', hoverTimer:0};
+function usedFonts(){ return [...new Set(IDS.map(id => state.styles[id].f))]; }
+function buildRows(){
+  const q = $('#fpSearch').value.trim().toLowerCase(), cat = FP.cat, rows = [];
+  const ok = m => (cat==='all' || m.c===cat) && (!q || m.n.toLowerCase().includes(q));
+  const all = SYSTEM.concat(GOOGLE);
+  if(!q && cat==='all'){
+    rows.push({t:'h', text:'Utilisées dans ce document'});
+    usedFonts().forEach(n => rows.push({t:'f', m:fontMeta(n)}));
+    rows.push({t:'h', text:'Polices système de Google Docs'});
+    SYSTEM.forEach(m => rows.push({t:'f', m}));
+    rows.push({t:'h', text:`Google Fonts (${GOOGLE.length.toLocaleString('fr-FR')})`});
+    GOOGLE.forEach(m => rows.push({t:'f', m}));
+  }else{
+    all.filter(ok).forEach(m => rows.push({t:'f', m}));
+  }
+  FP.rows = rows;
+  FP.active = rows.findIndex(r => r.t==='f');
+  $('#fpSpace').style.height = Math.max(rows.length, 1) * ROW + 'px';
+  $('#fpList').scrollTop = 0;
+  fpRender();
+}
+function fpRender(){
+  const list = $('#fpList'), win = $('#fpWin'), st = list.scrollTop, hgt = list.clientHeight || 300;
+  const first = Math.max(0, Math.floor(st/ROW) - 4), last = Math.min(FP.rows.length, Math.ceil((st+hgt)/ROW) + 4);
+  win.style.transform = `translateY(${first*ROW}px)`; win.textContent = '';
+  if(!FP.rows.length){ win.append(h('div', {class:'fp-empty'}, 'Aucune police ne correspond à cette recherche.')); return; }
+  const names = [];
+  for(let i=first; i<last; i++){
+    const r = FP.rows[i];
+    if(r.t === 'h'){ win.append(h('div', {class:'fp-row fp-head'}, r.text)); continue; }
+    const isCur = r.m.n === cur().f;
+    const name = h('span', {class:'fp-name'}, r.m.n); name.style.fontFamily = fontStack(r.m.n, r.m);
+    win.append(h('div', {class:'fp-row' + (i===FP.active ? ' is-active' : '') + (isCur ? ' is-current' : ''), 'data-i':i, role:'option'}, name, isCur ? h('span', {class:'fp-check'}, '✓') : null));
+    if(!r.m.sys) names.push(r.m.n);
+  }
+  schedulePreviewLoad(names);
+}
+function fpEnsureVisible(i){
+  const list = $('#fpList'), top = i*ROW, bot = top + ROW;
+  if(top < list.scrollTop) list.scrollTop = top; else if(bot > list.scrollTop + list.clientHeight) list.scrollTop = bot - list.clientHeight;
+}
+function fpMove(dir){
+  let i = FP.active;
+  do{ i += dir; }while(i >= 0 && i < FP.rows.length && FP.rows[i].t !== 'f');
+  if(i < 0 || i >= FP.rows.length) return;
+  FP.active = i; fpEnsureVisible(i); fpRender(); previewFont(FP.rows[i].m.n);
+}
+function previewFont(name){
+  tempFont = name; ensureFonts(); renderDocCSS(); renderList();
+}
+function chooseFont(name){
+  tempFont = null; closePops();
+  setFonts([selected], name);
+}
+function openFontPop(anchor){
+  if(openAnchor === anchor){ closePops(); return; }
+  closePops();
+  $('#fpSearch').value = ''; FP.cat = 'all';
+  renderCats(); $('#fpStatus').textContent = catalogReady ? catalogNote : 'Chargement de la liste complète des polices…';
+  const pop = $('#fontPop');
+  placePop(pop, anchor, Math.max(anchor.getBoundingClientRect().width, 300));
+  openAnchor = anchor;
+  buildRows();
+  $('#fpSearch').focus({preventScroll:true});
+}
+function renderCats(){
+  const box = $('#fpCats'); box.textContent = '';
+  [['all','Toutes'], ...Object.entries(CAT_LABELS)].forEach(([k,label]) => {
+    box.append(h('button', {class:'chip', type:'button', 'aria-pressed':String(FP.cat===k), onclick:() => { FP.cat = k; renderCats(); buildRows(); }}, label));
+  });
+}
+function initFontPop(){
+  $('#fpList').addEventListener('scroll', () => requestAnimationFrame(fpRender));
+  $('#fpSearch').addEventListener('input', buildRows);
+  $('#fpSearch').addEventListener('keydown', e => {
+    if(e.key === 'ArrowDown'){ e.preventDefault(); fpMove(1); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); fpMove(-1); }
+    else if(e.key === 'Enter'){ e.preventDefault(); const r = FP.rows[FP.active]; if(r && r.t==='f') chooseFont(r.m.n); }
+    else if(e.key === 'Escape'){ e.preventDefault(); closePops(); }
+  });
+  const win = $('#fpWin');
+  win.addEventListener('click', e => { const row = e.target.closest('.fp-row[data-i]'); if(row){ const r = FP.rows[+row.dataset.i]; if(r && r.t==='f') chooseFont(r.m.n); } });
+  win.addEventListener('mouseover', e => {
+    const row = e.target.closest('.fp-row[data-i]'); if(!row) return;
+    const r = FP.rows[+row.dataset.i]; if(!r || r.t!=='f') return;
+    clearTimeout(FP.hoverTimer);
+    FP.hoverTimer = setTimeout(() => { FP.active = +row.dataset.i; previewFont(r.m.n); fpRender(); }, 220);
+  });
+  $('#fpList').addEventListener('mouseleave', () => {
+    clearTimeout(FP.hoverTimer);
+    if(tempFont){ tempFont = null; renderDocCSS(); renderList(); }
+  });
+}
+
+/* =====================================================================
+   Modifications de l’état
+   ===================================================================== */
+function commit(opts){
+  if(!(opts && opts.noHistory)) pushHistory(false);
+  ensureFonts(); renderDocCSS(); renderList(); syncInspector(); scheduleUrl();
+}
+function update(patch){ Object.assign(cur(), patch); commit(); }
+function setFonts(ids, name){
+  const m = fontMeta(name);
+  ids.forEach(id => { const st = state.styles[id]; st.f = name; st.w = nearestWeight(m, st.w); });
+  commit();
+}
+function applyPair(p){
+  const [hf, hw, bf] = p, hm = fontMeta(hf), bm = fontMeta(bf);
+  ['title','h1','h2','h3','h4','h5','h6'].forEach(id => { const st = state.styles[id]; st.f = hf; st.w = nearestWeight(hm, hw); });
+  ['normal','subtitle'].forEach(id => { const st = state.styles[id]; st.f = bf; st.w = nearestWeight(bm, 400); });
+  commit();
+}
+function renderPairs(){
+  const ul = $('#pairList'); ul.textContent = '';
+  const names = new Set();
+  PAIRS.forEach((p, idx) => {
+    const hm = fontMeta(p[0]), bm = fontMeta(p[2]);
+    const a = h('span', {class:'pair-h'}, p[0]), b = h('span', {class:'pair-b'}, p[2]);
+    a.style.fontFamily = fontStack(p[0], hm); b.style.fontFamily = fontStack(p[2], bm); a.style.fontWeight = '400';
+    const btn = h('button', {class:'pair', type:'button', 'data-i':idx, title:`Titres : ${p[0]}, texte : ${p[2]}`}, a, b);
+    btn.addEventListener('click', () => applyPair(p));
+    ul.append(h('li', null, btn));
+    names.add(p[0]); names.add(p[2]);
+  });
+  schedulePreviewLoad([...names]);
+  syncPairs();
+}
+function syncPairs(){
+  document.querySelectorAll('.pair').forEach(b => {
+    const p = PAIRS[+b.dataset.i];
+    b.classList.toggle('is-active', state.styles.title.f === p[0] && state.styles.normal.f === p[2]);
+  });
+}
+
+/* =====================================================================
+   Panneau de droite : construction des contrôles
+   ===================================================================== */
+const syncers = [];
+function syncInspector(){
+  $('#inspTitle').textContent = LABELS[selected];
+  $('#undoBtn').disabled = hi <= 0;
+  $('#redoBtn').disabled = hi >= hist.length - 1;
+  syncers.forEach(fn => fn());
+  syncPairs();
+}
+function numField(label, {min,max,step,get,set}){
+  const input = h('input', {type:'number', min, max, step, inputmode:'decimal'});
+  input.addEventListener('input', () => { if(input.value === '') return; const v = Number(input.value); if(Number.isFinite(v)) set(clamp(v,min,max)); });
+  input.addEventListener('change', () => { input.value = fmtNum(get()); });
+  syncers.push(() => { if(document.activeElement !== input) input.value = fmtNum(get()); });
+  return h('label', {class:'field'}, h('span', {class:'lbl'}, label), input);
+}
+function toggleBtn(content, title, get, set){
+  const b = h('button', {type:'button', title, 'aria-label':title, 'aria-pressed':'false'});
+  b.append(content);
+  b.addEventListener('click', () => set(!get()));
+  syncers.push(() => b.setAttribute('aria-pressed', String(!!get())));
+  return b;
+}
+function colorField({get, set, allowNone=false, compact=false}){
+  const swatch = h('i');
+  const btn = h('button', {class:'sw', type:'button', 'aria-label':'Choisir une couleur', 'data-anchor':'1'}, swatch);
+  const hex = compact ? null : h('input', {type:'text', maxlength:7, spellcheck:'false', placeholder: allowNone ? 'Aucun' : '#000000', 'aria-label':'Code couleur hexadécimal'});
+  btn.addEventListener('click', () => openColorPop(btn, {get, set, allowNone}));
+  if(hex){
+    hex.addEventListener('input', () => { const v = hex.value.trim(); if(v === '' && allowNone){ set(''); return; } const n = normHex(v); if(n) set(n); });
+    hex.addEventListener('change', () => { hex.value = get() || ''; });
+  }
+  syncers.push(() => {
+    const v = get();
+    btn.classList.toggle('none', !v); swatch.style.background = v || '';
+    if(hex && document.activeElement !== hex) hex.value = v || '';
+  });
+  return h('div', {class:'colorfield'}, btn, hex);
+}
+function alignSvg(type){
+  const ws = type==='j' ? [14,14,14,14] : [14,9,14,9]; let d = '';
+  ws.forEach((w,i) => { const y = 4 + i*4; let x = 3; if(type==='c') x = 10 - w/2; if(type==='r') x = 17 - w; d += `M${x} ${y}h${w}`; });
+  const wrap = h('span'); wrap.innerHTML = `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="${d}"/></svg>`;
+  return wrap.firstChild;
+}
+const CHEVRON = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>';
+const COPY_ICON = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="9" height="9" rx="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0011.5 4H5.5A1.5 1.5 0 004 5.5v6A1.5 1.5 0 005.5 13H7"/></svg>';
+
+function buildInspector(){
+  const root = $('#inspector');
+
+  root.append(h('div', {class:'insp-head'},
+    h('div', null, h('h2', {id:'inspTitle'}, ''), h('p', null, 'Style de paragraphe sélectionné')),
+    h('button', {class:'btn small', type:'button', onclick:() => { state.styles[selected] = defaultsFor(selected); commit(); toast(`« ${LABELS[selected]} » réinitialisé`); }}, 'Réinitialiser')
+  ));
+
+  /* --- Police --- */
+  const fontLabel = h('span', null, '');
+  const fontBtn = h('button', {class:'fontbtn', type:'button', 'data-anchor':'1', 'aria-haspopup':'listbox'}, fontLabel);
+  fontBtn.insertAdjacentHTML('beforeend', CHEVRON);
+  fontBtn.addEventListener('click', () => openFontPop(fontBtn));
+  syncers.push(() => { const st = cur(); fontLabel.textContent = st.f; fontLabel.style.fontFamily = fontStack(st.f); });
+
+  const wSel = h('select', {'aria-label':'Graisse'}); let wKey = '';
+  wSel.addEventListener('change', () => update({w:Number(wSel.value)}));
+  syncers.push(() => {
+    const m = fontMeta(cur().f), key = m.n + m.w.join();
+    if(key !== wKey){ wKey = key; wSel.textContent = ''; m.w.forEach(w => wSel.append(h('option', {value:w}, `${WEIGHT_NAMES[w] || w} (${w})`))); }
+    wSel.value = String(nearestWeight(m, cur().w));
+  });
+
+  const boldBtn = toggleBtn(h('b', null, 'G'), 'Gras',
+    () => nearestWeight(fontMeta(cur().f), cur().w) >= 600,
+    on => update({w: nearestWeight(fontMeta(cur().f), on ? 700 : 400)}));
+  const style = h('div', {class:'seg', role:'group', 'aria-label':'Style du texte'},
+    boldBtn,
+    toggleBtn(h('i', null, 'I'), 'Italique', () => cur().i, on => update({i:on?1:0})),
+    toggleBtn(h('u', null, 'S'), 'Souligné', () => cur().u, on => update({u:on?1:0})),
+    toggleBtn(h('s', null, 'ab'), 'Barré', () => cur().k, on => update({k:on?1:0})));
+
+  root.append(h('section', {class:'group'},
+    h('h3', null, 'Police'),
+    h('div', {class:'stack'},
+      h('div', {class:'field'}, h('span', {class:'lbl'}, 'Famille de police'), fontBtn),
+      h('div', {class:'grid2'},
+        numField('Taille (pt)', {min:1, max:400, step:0.5, get:() => cur().s, set:v => update({s:v})}),
+        h('label', {class:'field'}, h('span', {class:'lbl'}, 'Graisse'), wSel)),
+      h('div', {class:'toolrow'}, style),
+      h('div', {class:'field'}, h('span', {class:'lbl'}, 'Couleur du texte'),
+        colorField({get:() => cur().c, set:c => update({c})})),
+      h('div', {class:'stack', style:'gap:4px'},
+        h('button', {class:'linkbtn', type:'button', onclick:() => { setFonts(['title','h1','h2','h3','h4','h5','h6'], cur().f); toast('Police appliquée à tous les titres'); }}, 'Appliquer cette police au titre et aux titres 1 à 6'),
+        h('button', {class:'linkbtn', type:'button', onclick:() => { setFonts(IDS, cur().f); toast('Police appliquée aux 9 styles'); }}, 'Appliquer cette police aux 9 styles'))
+    )));
+
+  /* --- Paragraphe --- */
+  const alignSeg = h('div', {class:'seg', role:'group', 'aria-label':'Alignement'});
+  ALIGNS.forEach(([k,label]) => alignSeg.append(toggleBtn(alignSvg(k), label, () => cur().a === k, () => update({a:k}))));
+  root.append(h('section', {class:'group'},
+    h('h3', null, 'Paragraphe'),
+    h('div', {class:'stack'},
+      h('div', {class:'field'}, h('span', {class:'lbl'}, 'Alignement'), alignSeg),
+      h('div', {class:'grid3'},
+        numField('Interligne', {min:0.5, max:4, step:0.05, get:() => cur().ls, set:v => update({ls:v})}),
+        numField('Avant (pt)', {min:0, max:400, step:1, get:() => cur().sb, set:v => update({sb:v})}),
+        numField('Après (pt)', {min:0, max:400, step:1, get:() => cur().sa, set:v => update({sa:v})})),
+      h('div', {class:'grid3'},
+        numField('Retrait gauche (cm)', {min:-5, max:30, step:0.25, get:() => cur().il, set:v => update({il:v})}),
+        numField('Retrait droit (cm)', {min:-5, max:30, step:0.25, get:() => cur().ir, set:v => update({ir:v})}),
+        numField('1re ligne (cm)', {min:-30, max:30, step:0.25, get:() => cur().fi, set:v => update({fi:v})}))
+    )));
+
+  /* --- Bordures --- */
+  const grid = h('div', {class:'borders'}, h('span', {class:'hd'}, 'Côté'), h('span', {class:'hd'}, 'Épaisseur'), h('span'), h('span', {class:'hd'}, 'Trait'), h('span'));
+  const setBorder = (k, idx, v) => {
+    const a = cur()[k].slice(); a[idx] = v; if(idx > 0 && a[0] === 0) a[0] = 1;
+    update({[k]:a});
+  };
+  SIDES.forEach(([k,,label]) => {
+    const width = h('input', {type:'number', min:0, max:50, step:0.25, 'aria-label':`Épaisseur, bordure ${label.toLowerCase()} (pt)`, placeholder:'0'});
+    width.addEventListener('input', () => { if(width.value === '') return; const v = Number(width.value); if(Number.isFinite(v)) update({[k]:[clamp(v,0,50), cur()[k][1], cur()[k][2]]}); });
+    width.addEventListener('change', () => { width.value = fmtNum(cur()[k][0]); });
+    const color = colorField({get:() => cur()[k][1], set:c => setBorder(k,1,c), compact:true});
+    const dash = h('select', {'aria-label':`Type de trait, bordure ${label.toLowerCase()}`}, DASHES.map(([v,l]) => h('option', {value:v}, l)));
+    dash.addEventListener('change', () => setBorder(k,2,dash.value));
+    const copy = h('button', {class:'iconbtn', type:'button', title:`Copier la bordure « ${label.toLowerCase()} » sur les 4 côtés`, 'aria-label':`Copier la bordure ${label.toLowerCase()} sur les 4 côtés`});
+    copy.innerHTML = COPY_ICON;
+    copy.addEventListener('click', () => { const s = cur()[k]; update({bt:s.slice(), bb:s.slice(), bl:s.slice(), br:s.slice()}); });
+    const lab = h('span', {class:'hd'}, label);
+    syncers.push(() => {
+      const [w,,d] = cur()[k];
+      if(document.activeElement !== width) width.value = fmtNum(w);
+      dash.value = d;
+      [lab, width, color, dash].forEach(el => el.classList.toggle('off', w === 0));
+    });
+    grid.append(lab, width, color, dash, copy);
+  });
+  root.append(h('section', {class:'group'},
+    h('h3', null, 'Bordures'),
+    h('div', {class:'stack'}, grid,
+      numField('Distance entre le texte et la bordure (pt)', {min:0, max:50, step:0.5, get:() => cur().bp, set:v => update({bp:v})}),
+      h('p', {class:'lbl', style:'margin:0'}, 'Une épaisseur de 0 supprime la bordure du côté concerné.'))));
+
+  /* --- Arrière-plan --- */
+  root.append(h('section', {class:'group', style:'border-bottom:0'},
+    h('h3', null, 'Arrière-plan du paragraphe'),
+    h('div', {class:'field'}, h('span', {class:'lbl'}, 'Couleur de fond'),
+      colorField({get:() => cur().bg, set:c => update({bg:c}), allowNone:true}))));
+}
+
+/* =====================================================================
+   Fiche récapitulative, partage, actions globales
+   ===================================================================== */
+function specText(url){
+  const L = [];
+  L.push('ATELIER DE STYLES POUR GOOGLE DOCS : RÉCAPITULATIF', '');
+  L.push('Lien partageable : ' + url, '', 'Format de page : ' + PAGES[state.page].label, '');
+  IDS.forEach(id => {
+    const s = state.styles[id], m = fontMeta(s.f), w = nearestWeight(m, s.w);
+    L.push(LABELS[id].toUpperCase());
+    L.push(`  Police : ${s.f}, ${fr(s.s)} pt, graisse ${WEIGHT_NAMES[w] || w} (${w})` + (s.i ? ', italique' : '') + (s.u ? ', souligné' : '') + (s.k ? ', barré' : ''));
+    L.push(`  Couleur du texte : ${s.c}`);
+    L.push(`  Alignement : ${{l:'gauche',c:'centré',r:'droite',j:'justifié'}[s.a]}`);
+    L.push(`  Interligne : ${fr(s.ls)}, espacement avant ${fr(s.sb)} pt, après ${fr(s.sa)} pt`);
+    L.push(`  Retraits : gauche ${fr(s.il)} cm, droit ${fr(s.ir)} cm, première ligne ${fr(s.fi)} cm`);
+    const bs = SIDES.filter(([k]) => s[k][0] > 0).map(([k,,lab]) => `${lab.toLowerCase()} ${fr(s[k][0])} pt ${DASHES.find(d=>d[0]===s[k][2])[1].toLowerCase()} ${s[k][1]}`);
+    L.push('  Bordures : ' + (bs.length ? bs.join(' ; ') + `, distance du texte ${fr(s.bp)} pt` : 'aucune'));
+    L.push('  Arrière-plan : ' + (s.bg || 'aucun'), '');
+  });
+  L.push('POUR L’APPLIQUER DANS GOOGLE DOCS',
+    '  1. Sélectionnez un paragraphe et réglez sa mise en forme comme ci-dessus.',
+    '  2. Menu Format > Styles de paragraphe > Mettre à jour « Titre 1 » pour qu’il corresponde.',
+    '  3. Répétez pour chaque style, puis, si besoin, Format > Styles de paragraphe > Enregistrer comme mes styles par défaut.');
+  return L.join('\n');
+}
+async function shareUrl(){
+  const tok = await writeUrl();
+  return location.href.split('#')[0] + (tok ? '#s=' + tok : '');
+}
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); return true; }catch(e){}
+  const ta = h('textarea', {style:'position:fixed;left:-9999px'}); ta.value = text; document.body.append(ta); ta.select();
+  let ok = false; try{ ok = document.execCommand('copy'); }catch(e){} ta.remove(); return ok;
+}
+
+/* =====================================================================
+   Initialisation
+   ===================================================================== */
+function init(){
+  setCatalog(parseEmbed());
+  catalogNote = 'Chargement de la liste complète…';
+  buildDoc(); buildList(); buildInspector(); initFontPop();
+  $('#pageSel').append(...Object.entries(PAGES).map(([k,p]) => h('option', {value:k}, p.label)));
+  $('#pageSel').addEventListener('change', e => { state.page = e.target.value; applyPage(); commit(); });
+
+  $('#undoBtn').addEventListener('click', undo);
+  $('#redoBtn').addEventListener('click', redo);
+  $('#resetAllBtn').addEventListener('click', () => {
+    if(confirm('Réinitialiser les 9 styles aux valeurs par défaut de Google Docs ?')){ state = freshState(); applyPage(); commit(); toast('Tous les styles ont été réinitialisés'); }
+  });
+  $('#shareBtn').addEventListener('click', async () => {
+    const url = await shareUrl();
+    toast(await copyText(url) ? 'Lien copié dans le presse-papiers' : 'Copie impossible : récupérez le lien dans la barre d’adresse');
+  });
+  $('#specBtn').addEventListener('click', async () => {
+    const url = await shareUrl();
+    $('#specText').value = specText(url); $('#specDialog').showModal();
+  });
+  $('#specClose').addEventListener('click', () => $('#specDialog').close());
+  $('#specCopy').addEventListener('click', async () => toast(await copyText($('#specText').value) ? 'Texte copié' : 'Copie impossible'));
+  $('#randomPair').addEventListener('click', () => {
+    const current = PAIRS.findIndex(p => p[0]===state.styles.title.f && p[2]===state.styles.normal.f);
+    let i; do{ i = Math.floor(Math.random()*PAIRS.length); }while(i === current && PAIRS.length > 1);
+    applyPair(PAIRS[i]);
+  });
+  $('#zoomIn').addEventListener('click', () => { const z = currentZoom(); zoomMode = ZOOMS.find(v => v > z + 0.01) || ZOOMS[ZOOMS.length-1]; applyZoom(); });
+  $('#zoomOut').addEventListener('click', () => { const z = currentZoom(); zoomMode = [...ZOOMS].reverse().find(v => v < z - 0.01) || ZOOMS[0]; applyZoom(); });
+  $('#zoomFit').addEventListener('click', () => { zoomMode = 'fit'; applyZoom(); });
+  if('ResizeObserver' in window) new ResizeObserver(() => { if(zoomMode==='fit') applyZoom(); }).observe($('#scroller'));
+  $('#inspector').addEventListener('scroll', closePops, {passive:true});
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ closePops(); return; }
+    if(e.target.closest && e.target.closest('input,textarea,select')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if(mod && e.key.toLowerCase() === 'z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    else if(mod && e.key.toLowerCase() === 'y'){ e.preventDefault(); redo(); }
+  });
+  document.fonts && document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', scheduleRefresh);
+
+  addEventListener('hashchange', () => { const t = readToken(); if(t !== lastToken) applyToken(t); });
+
+  const tok = readToken();
+  const start = async () => {
+    if(tok){
+      try{ state = fromPayload(await decodeToken(tok)); lastToken = tok; }
+      catch(e){ state = freshState(); toast('Lien invalide ou illisible : ' + (e.message || 'erreur')); }
+    }
+    pushHistory(true);
+    applyPage(); select('normal', false); renderPairs(); commit({noHistory:true});
+    loadCatalog();
+  };
+  start();
+}
+init();
+})();
+</script>
+</body>
+</html>
